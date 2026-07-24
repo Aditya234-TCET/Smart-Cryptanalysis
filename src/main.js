@@ -1,4 +1,5 @@
 // Main Application Controller
+import './style.css';
 
 import { Caesar, Vigenere, Playfair, RailFence, Substitution, isLetter } from './ciphers.js';
 import { 
@@ -795,7 +796,7 @@ function runDecoderProcess() {
       STATE.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
     } catch(err) {
       // Fallback for standard script workers in case type:module fails in some browsers
-      STATE.worker = new Worker('/src/worker.js');
+      STATE.worker = new Worker(new URL('./worker.js', import.meta.url));
     }
     
     STATE.worker.postMessage({
