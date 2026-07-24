@@ -158,6 +158,35 @@ Smart-Cryptanalysis/
 
 ---
 
+## 🌐 Deployment on Vercel
+
+### Method 1: Deploy via Vercel Dashboard (Recommended)
+
+1. Log in to your [Vercel Account](https://vercel.com).
+2. Click **Add New** → **Project**.
+3. Import your GitHub repository: `Aditya234-TCET/Smart-Cryptanalysis`.
+4. Vercel will automatically detect **Vite**:
+   - **Framework Preset**: `Vite`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+5. Click **Deploy**. Vercel will build and deploy your app with a free HTTPS URL (e.g. `smart-cryptanalysis.vercel.app`).
+
+### Method 2: Deploy via Vercel CLI
+
+```bash
+# 1. Install Vercel CLI globally
+npm i -g vercel
+
+# 2. Deploy to preview
+vercel
+
+# 3. Deploy to production
+vercel --prod
+```
+
+---
+
 ## 📜 License
 
 Distributed under the MIT License. See `LICENSE` for details.
+
