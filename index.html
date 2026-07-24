@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Cryptanalysis Tool & Educational Sandbox</title>
+    <!-- Font Awesome or Lucide will be bundled, but we include Google Fonts already in style.css -->
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="logo-container">
+        <!-- SVG Logo -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="logo-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M8 11h8"></path><path d="M12 7v8"></path></svg>
+        <div>
+          <h1>Smart Cryptanalysis</h1>
+          <div class="subtitle">Educational Cipher Sandbox & ML Analyzer</div>
+        </div>
+      </div>
+      
+      <div class="tab-navigation">
+        <button class="tab-btn active" id="tab-sandbox-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          Cipher Sandbox
+        </button>
+        <button class="tab-btn" id="tab-analysis-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Cryptanalysis Suite
+        </button>
+      </div>
+    </header>
+
+    <div class="app-container">
+      
+      <!-- TAB 1: CIPHER SANDBOX -->
+      <section class="tab-content active" id="tab-sandbox">
+        <div class="workspace-grid">
+          
+          <!-- LEFT PANEL: Controls -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <h2>Cipher Configuration</h2>
+              </div>
+            </div>
+            
+            <div class="mode-toggle-group">
+              <button class="mode-toggle-btn active" id="mode-encrypt">Encrypt Mode</button>
+              <button class="mode-toggle-btn" id="mode-decrypt">Decrypt Mode</button>
+            </div>
+            
+            <div class="form-group">
+              <label for="cipher-select">Select Classical Cipher</label>
+              <select id="cipher-select">
+                <option value="caesar">Caesar Cipher (Shift Cipher)</option>
+                <option value="vigenere">Vigenère Cipher (Polyalphabetic)</option>
+                <option value="playfair">Playfair Cipher (Digram Grid)</option>
+                <option value="railfence">Rail Fence Cipher (Zigzag Transposition)</option>
+                <option value="substitution">Monoalphabetic Substitution</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sandbox-input" id="input-label">Plaintext Message</label>
+              <textarea id="sandbox-input" class="mono-input" placeholder="Type message to encrypt..."></textarea>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="btn btn-secondary" id="btn-load-sample" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Load Sample</button>
+                <button class="btn btn-secondary" id="btn-clear-input" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Clear</button>
+              </div>
+            </div>
+            
+            <!-- DYNAMIC PARAMETERS -->
+            <div id="param-caesar" class="cipher-params">
+              <div class="form-group">
+                <label>Key Offset (Shift Shift Value)</label>
+                <div class="slider-container">
+                  <input type="range" id="caesar-key" min="0" max="25" value="3" />
+                  <span class="slider-value" id="caesar-key-val">3</span>
+                </div>
+              </div>
+            </div>
+            
+            <div id="param-vigenere" class="cipher-params" style="display: none;">
+              <div class="form-group">
+                <label for="vigenere-key">Keyword (Letters only)</label>
+                <input type="text" id="vigenere-key" value="KEY" placeholder="e.g. SECRET" style="text-transform: uppercase;" />
+              </div>
+            </div>
+            
+            <div id="param-playfair" class="cipher-params" style="display: none;">
+              <div class="form-group">
+                <label for="playfair-key">Playfair Keyword</label>
+                <input type="text" id="playfair-key" value="MONARCHY" placeholder="e.g. MONARCHY" style="text-transform: uppercase;" />
+              </div>
+            </div>
+            
+            <div id="param-railfence" class="cipher-params" style="display: none;">
+              <div class="form-group">
+                <label>Number of Rails (Fence Depth)</label>
+                <div class="slider-container">
+                  <input type="range" id="railfence-rails" min="2" max="15" value="3" />
+                  <span class="slider-value" id="railfence-rails-val">3</span>
+                </div>
+              </div>
+            </div>
+            
+            <div id="param-substitution" class="cipher-params" style="display: none;">
+              <div class="form-group">
+                <label for="sub-key">Substitution Alphabet Mapping (26 Characters)</label>
+                <input type="text" id="sub-key" value="QWERTYUIOPASDFGHJKLZXCVBNM" placeholder="e.g. QWERTYUIOPASDFGHJKLZXCVBNM" style="text-transform: uppercase;" maxlength="26" class="mono-input" />
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                  <button class="btn btn-secondary" id="btn-sub-random" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">Randomize Key</button>
+                  <button class="btn btn-secondary" id="btn-sub-reverse" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">Reverse (Atbash)</button>
+                  <button class="btn btn-secondary" id="btn-sub-rot13" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">ROT13 Alphabet</button>
+                </div>
+              </div>
+            </div>
+            
+            <button class="btn" id="btn-execute-cipher" style="width: 100%; margin-top: 1rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+              Execute Cipher Engine
+            </button>
+            
+          </div>
+          
+          <!-- RIGHT PANEL: Live Visualization -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <h2>Live Simulation & Sandbox</h2>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <div class="output-header">Output Result</div>
+              <div style="position: relative;">
+                <div class="output-value" id="sandbox-output">Result will appear here...</div>
+                <button class="btn btn-secondary" id="btn-copy-output" style="position: absolute; right: 8px; top: 8px; padding: 0.35rem 0.65rem; font-size: 0.75rem;">Copy</button>
+              </div>
+            </div>
+            
+            <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+              <div class="output-header" style="margin-bottom: 0.5rem;">Mathematical & Spatial Visualization</div>
+              <div class="visualization-sandbox" id="viz-sandbox">
+                
+                <!-- CAESAR VISUALIZER: Wheel -->
+                <div id="viz-caesar" class="wheel-container">
+                  <div class="cipher-wheel-outer" id="caesar-wheel-outer">
+                    <!-- Outer letters dynamically loaded -->
+                    <div class="cipher-wheel-inner" id="caesar-wheel-inner">
+                      <!-- Inner letters dynamically loaded -->
+                    </div>
+                  </div>
+                  <div style="font-size: 0.85rem; text-align: center; color: var(--text-secondary);">
+                    <span style="color: var(--text-primary); font-weight: bold;">Outer Ring</span>: Plaintext | <span style="color: var(--secondary); font-weight: bold;">Inner Ring</span>: Ciphertext
+                  </div>
+                </div>
+                
+                <!-- VIGENERE VISUALIZER: Mini Grid -->
+                <div id="viz-vigenere" class="vigenere-grid-container" style="display: none;">
+                  <table class="vigenere-table" id="vigenere-table-element">
+                    <!-- Vigenere table rows generated in JS -->
+                  </table>
+                  <div style="font-size: 0.8rem; text-align: center; margin-top: 0.5rem; color: var(--text-secondary);">
+                    Tabula Recta: Intersects plaintext key offsets. Key character maps horizontal rows.
+                  </div>
+                </div>
+                
+                <!-- PLAYFAIR VISUALIZER: 5x5 Matrix -->
+                <div id="viz-playfair" style="display: none; width: 100%;">
+                  <div class="playfair-board" id="playfair-board-element">
+                    <!-- 5x5 Playfair grid generated here -->
+                  </div>
+                  <div class="playfair-trace" id="playfair-trace-element">
+                    Trace log of processing rules will be shown here.
+                  </div>
+                </div>
+                
+                <!-- RAIL FENCE VISUALIZER: Zigzag -->
+                <div id="viz-railfence" class="rail-fence-viz" style="display: none;">
+                  <div id="railfence-grid-element">
+                    <!-- Rails rows generated in JS -->
+                  </div>
+                  <div style="font-size: 0.8rem; text-align: center; margin-top: 0.5rem; color: var(--text-secondary);">
+                    Zigzag fence: Characters bounce down and up rails in a periodic path.
+                  </div>
+                </div>
+                
+                <!-- SUBSTITUTION VISUALIZER: Map line -->
+                <div id="viz-substitution" class="sub-map-container" style="display: none;">
+                  <div class="sub-alphabet-row" id="sub-row-plain">
+                    <!-- Plain letters -->
+                  </div>
+                  <div class="sub-alphabet-row" id="sub-row-cipher" style="margin-top: 2px;">
+                    <!-- Cipher mappings -->
+                  </div>
+                  <div style="font-size: 0.8rem; text-align: center; margin-top: 0.5rem; color: var(--text-secondary);">
+                    Full 26-letter substitution alphabet map.
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: CRYPTANALYSIS SUITE -->
+      <section class="tab-content" id="tab-analysis">
+        <div class="analysis-grid">
+          
+          <!-- LEFT PANEL: Stats & Classifier -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <h2>Cipher Classifier</h2>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="analysis-input">Ciphertext to Analyze</label>
+              <textarea id="analysis-input" class="mono-input" placeholder="Paste cipher text here (minimum 10 letters for stats analysis)..."></textarea>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="btn btn-secondary" id="btn-pull-sandbox" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Pull from Sandbox</button>
+                <button class="btn" id="btn-run-classifier" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Analyze Text</button>
+              </div>
+            </div>
+            
+            <!-- Circular prediction dial -->
+            <div class="classifier-dial-container">
+              <div class="circle-progress-wrapper">
+                <svg width="140" height="140">
+                  <circle class="circle-progress-bg" cx="70" cy="70" r="60"></circle>
+                  <circle class="circle-progress-bar" id="classifier-bar" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"></circle>
+                </svg>
+                <div class="circle-text-wrapper">
+                  <span class="circle-percentage" id="classifier-pct">0%</span>
+                  <span class="circle-label">Match</span>
+                </div>
+              </div>
+              
+              <div class="prediction-box">
+                <div class="prediction-name" id="predicted-cipher">Awaiting Text</div>
+                <div class="prediction-reason" id="classifier-explanation">Enter ciphertext and click Analyze to perform letter frequency, Index of Coincidence, and entropy classification.</div>
+              </div>
+            </div>
+            
+            <!-- Statistics metrics table -->
+            <table class="metrics-table">
+              <tr>
+                <td class="label">Index of Coincidence (IoC)</td>
+                <td class="value" id="stat-ioc">0.0000</td>
+              </tr>
+              <tr>
+                <td class="label">Shannon Entropy</td>
+                <td class="value" id="stat-entropy">0.0000</td>
+              </tr>
+              <tr>
+                <td class="label">Chi-Squared Baseline</td>
+                <td class="value" id="stat-chi">0.00</td>
+              </tr>
+            </table>
+            
+          </div>
+          
+          <!-- RIGHT PANEL: Automated Cracking Sandbox -->
+          <div class="glass-panel" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <h2>Automated Solvers & Decrypters</h2>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 250px;">
+                <label for="solver-select">Select Target Solver</label>
+                <select id="solver-select">
+                  <option value="caesar">Caesar Solver (Chi-Squared Minimization)</option>
+                  <option value="vigenere">Vigenère Solver (Friedman / Coset Shift)</option>
+                  <option value="railfence">Rail Fence Solver (Brute-Force & Word Count)</option>
+                  <option value="substitution-annealing">Substitution: Simulated Annealing (AI Solver)</option>
+                  <option value="substitution-manual">Substitution: Manual Frequency Matcher</option>
+                </select>
+              </div>
+              
+              <div style="display: flex; gap: 0.5rem; margin-top: 1.25rem;">
+                <button class="btn" id="btn-run-solver">Start Solving</button>
+                <button class="btn btn-danger" id="btn-stop-solver" style="display: none;">Stop Solving</button>
+              </div>
+            </div>
+            
+            <!-- Solver console / logs -->
+            <div class="solver-console-box">
+              <div class="solver-status-bar">
+                <div>Console Output Logs</div>
+                <div class="status-badge idle" id="solver-status-badge">
+                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+                  <span id="solver-status-text">Ready</span>
+                </div>
+              </div>
+              
+              <!-- Console Logs -->
+              <div class="solver-terminal" id="solver-console">
+                <div class="terminal-line info">Select a solver, then click "Start Solving" to trace cryptanalysis steps...</div>
+              </div>
+              
+              <!-- Solver Charts & Visualizations -->
+              <div class="solver-charts-container">
+                
+                <!-- Caesar Shift Chart -->
+                <div id="chart-caesar-container" style="display: none;">
+                  <div class="output-header">Chi-Squared Values per Shift Key (Lowest is Best)</div>
+                  <div class="chart-wrapper">
+                    <canvas id="chart-caesar"></canvas>
+                  </div>
+                </div>
+                
+                <!-- Vigenere IoC Period Chart -->
+                <div id="chart-vigenere-container" style="display: none;">
+                  <div class="output-header">Coset Average Index of Coincidence per Period Length</div>
+                  <div class="chart-wrapper">
+                    <canvas id="chart-vigenere"></canvas>
+                  </div>
+                </div>
+                
+                <!-- Substitution Annealing Fitness Chart -->
+                <div id="chart-fitness-container" style="display: none;">
+                  <div class="output-header">Heuristic Score Progression (Log-Probability)</div>
+                  <div class="chart-wrapper">
+                    <canvas id="chart-fitness"></canvas>
+                  </div>
+                </div>
+                
+                <!-- Substitution Manual Frequency Matcher Grid -->
+                <div id="interactive-manual-sub" style="display: none;" class="manual-freq-interactive">
+                  <div class="output-header">Manual Frequency Matcher (Adjust values to decrypt)</div>
+                  <div class="freq-matching-grid" id="manual-freq-grid-element">
+                    <!-- 26 slots generated dynamically -->
+                  </div>
+                  <div style="font-size: 0.8rem; text-align: center; color: var(--text-muted);">
+                    Ciphertext letters are sorted by count. Match them with English standard distributions (most common: E, T, A, O, I, N).
+                  </div>
+                </div>
+                
+              </div>
+              
+              <!-- Decrypted Plaintext Result in Cracking -->
+              <div class="form-group" style="margin-top: auto; margin-bottom: 0;">
+                <div class="output-header">Recovered Plaintext (Best Guess)</div>
+                <div class="output-value" id="solver-output" style="color: var(--secondary); font-size: 1rem; min-height: 100px;">
+                  Plaintext output will appear here...
+                </div>
+              </div>
+              
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+      <!-- LETTER FREQUENCY BASELINE CHART SECTION -->
+      <section class="glass-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg>
+            <h2>Live Letter Frequency Analysis</h2>
+          </div>
+        </div>
+        <div class="chart-wrapper" style="height: 250px;">
+          <canvas id="chart-frequency-analysis"></canvas>
+        </div>
+      </section>
+
+      <!-- LEARNING CENTER: Concept Hub -->
+      <section class="learning-section">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              <h2>Cryptographic Concept Hub & Interactive Study Guide</h2>
+            </div>
+          </div>
+          
+          <div class="guide-grid">
+            
+            <div class="guide-card">
+              <h3>Caesar Cipher & Chi-Squared</h3>
+              <p>The <strong>Caesar Cipher</strong> is a monoalphabetic substitution where each letter is shifted by a constant $k$. It is broken easily because the letter frequency shape is unchanged—simply shifted.</p>
+              <p>By computing the <strong>Chi-Squared ($\chi^2$) statistic</strong> for all 26 possible shifts against standard English frequencies, we can automatically determine the correct key: the shift with the minimum $\chi^2$ represents the perfect alignment.</p>
+            </div>
+            
+            <div class="guide-card">
+              <h3>Vigenère Cipher & IoC</h3>
+              <p>The <strong>Vigenère Cipher</strong> employs a repeating keyword to select shifts dynamically, smoothing out the unigram letter frequencies. We crack this using the <strong>Index of Coincidence (IoC)</strong>.</p>
+              <p>IoC measures letter distribution variance. A random sequence has IoC $\approx 0.038$, while English has IoC $\approx 0.0667$. By testing periods (key lengths) and evaluating coset IoCs, we locate the true key length because its cosets align monoalphabetically, boosting the IoC peak.</p>
+            </div>
+            
+            <div class="guide-card">
+              <h3>Monoalphabetic & Simulated Annealing</h3>
+              <p>General <strong>Monoalphabetic Substitution</strong> maps each letter randomly (key space of $26! \approx 4 \times 10^{26}$). Since brute-force is impossible, we use a <strong>Heuristic Hill-Climbing / Simulated Annealing</strong> solver.</p>
+              <p>We swap keys and evaluate the decrypted text's <strong>Bigram Fitness Score</strong> (summing the log-probabilities of English letter pairings like <code>TH</code> or <code>HE</code>). Annealing allows accepting worse fits early to escape local maxima, slowly settling on the global maximum representing English plaintext.</p>
+            </div>
+            
+            <div class="guide-card">
+              <h3>Transpositions & Playfair Grid</h3>
+              <p><strong>Rail Fence</strong> is a transposition cipher (shuffling letters without replacing them). Since letter frequencies are unaffected, Chi-squared is low, but bigram and word-match scores drop. We brute-force rails and evaluate word counts to solve.</p>
+              <p><strong>Playfair Cipher</strong> encrypts letters in pairs (digrams) on a 5x5 grid. This breaks single-letter frequency analysis but is vulnerable to digram frequency analysis because double letter splits and character rectangles show structural patterns.</p>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
