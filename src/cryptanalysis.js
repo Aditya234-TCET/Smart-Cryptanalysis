@@ -2,6 +2,7 @@
 
 import { ENGLISH_FREQS, getFitness, getDictionaryScore } from './bigrams.js';
 import { Caesar, Vigenere, RailFence } from './ciphers.js';
+import { predictCipherModel } from './ml_model.js';
 
 // ----------------------------------------------------
 // 1. STATISTICAL CALCULATORS
@@ -119,78 +120,54 @@ export function classifyCipher(text) {
   const entropy = getEntropy(cleaned);
   const chi2 = getChiSquared(cleaned);
   
-  let type = "Monoalphabetic Substitution";
-  let confidence = 50;
-  let reason = "";
+  const dict_match = getDictionaryScore(text);
+  const vowels = cleaned.match(/[AEIOU]/g);
+  const vowel_ratio = (vowels ? vowels.length : 0) / cleaned.length;
+  const unique_ratio = new Set(cleaned).size / cleaned.length;
+
+  const features = [ioc, entropy, chi2, dict_match, vowel_ratio, unique_ratio];
+  const mlResult = predictCipherModel(features);
+
+  const nameMap = {
+    "Caesar": "Caesar",
+    "Monoalphabetic": "Monoalphabetic Substitution",
+    "PlainEnglish": "Plain English",
+    "Playfair": "Playfair",
+    "RailFence": "Rail Fence",
+    "Vigenere": "Vigenère"
+  };
+
+  let type = nameMap[mlResult.prediction] || mlResult.prediction;
+
+  let probabilities = {};
+  for (let key in mlResult.probabilities) {
+    const mappedKey = nameMap[key] || key;
+    probabilities[mappedKey] = Math.round(mlResult.probabilities[key] * 100);
+  }
+
+  let sum = Object.values(probabilities).reduce((a, b) => a + b, 0);
+  if (sum > 0) {
+    let diff = 100 - sum;
+    let maxKey = Object.keys(probabilities).reduce((a, b) => probabilities[a] > probabilities[b] ? a : b);
+    probabilities[maxKey] += diff;
+  }
+
+  let confidence = probabilities[type] || 0;
+
+  let reason = `Based on ML statistical analysis, ${type} is the most probable cipher (${confidence}%).`;
   
-  // 1. Check for Transposition (Rail Fence)
-  // If Chi-squared at shift 0 is very low, the letter counts match English exactly!
-  if (chi2 < 15.0) {
-    type = "Rail Fence";
-    confidence = Math.min(95, Math.max(70, (15 - chi2) * 6 + 70));
-    reason = `The letter frequencies match standard English frequencies almost perfectly (Chi² = ${chi2.toFixed(2)}, which is very low). This is a strong indicator of a transposition cipher like Rail Fence, where letters are shuffled but not replaced.`;
-  }
-  // 2. Check for Caesar (Shift)
-  // Check if any Caesar shift yields a low Chi-squared
-  else {
-    let bestShift = -1;
-    let minChi2 = Infinity;
-    for (let shift = 0; shift < 26; shift++) {
-      // Shift characters back
-      const decrypted = text.split('').map(char => {
-        if (/[a-zA-Z]/.test(char)) {
-          const isUpper = char === char.toUpperCase();
-          const base = isUpper ? 65 : 97;
-          const code = char.charCodeAt(0) - base;
-          return String.fromCharCode(((code - shift + 26) % 26) + base);
-        }
-        return char;
-      }).join('');
-      
-      const score = getChiSquared(decrypted);
-      if (score < minChi2) {
-        minChi2 = score;
-        bestShift = shift;
-      }
-    }
-    
-    if (minChi2 < 15.0 && bestShift > 0) {
-      type = "Caesar";
-      confidence = Math.min(98, Math.max(75, (15 - minChi2) * 5 + 80));
-      reason = `A simple Caesar shift of key = ${bestShift} reconstructs standard English letter distributions perfectly (Chi² drops from ${chi2.toFixed(2)} to ${minChi2.toFixed(2)}).`;
-    } 
-    // 3. Polyalphabetic (Vigenère) vs Monoalphabetic Substitution
-    else {
-      // Index of Coincidence for English is ~0.0667.
-      // For Vigenère, IoC is typically flattened: 0.038 to 0.055.
-      if (ioc < 0.055) {
-        type = "Vigenère";
-        confidence = Math.min(95, Math.max(60, (0.0667 - ioc) * 1200 + 40));
-        reason = `The Index of Coincidence (IoC = ${ioc.toFixed(4)}) is low (close to the random baseline of 0.0385). This suggests letter frequencies have been smoothed out, which is typical of polyalphabetic ciphers like Vigenère that use multiple shift alphabets.`;
-      } else {
-        // High IoC but no Caesar shift works -> Monoalphabetic substitution
-        // Let's also check if it's Playfair: Playfair has no J (usually), even letters (after cleaning), and certain digram behaviors.
-        const containsJ = cleaned.includes('J');
-        const oddLength = cleaned.length % 2 !== 0;
-        
-        if (!containsJ && cleaned.length > 20 && !/(.)\1/.test(cleaned.substring(0, 20))) {
-          // Playfair is double-letter resistant and J-free
-          type = "Playfair";
-          confidence = 65;
-          reason = `The Index of Coincidence (IoC = ${ioc.toFixed(4)}) is high, indicating monoalphabetic property. However, standard Caesar shifts do not work. Additionally, the letter 'J' is absent and there are structural patterns suggesting a 5x5 grid digram substitution (Playfair).`;
-        } else {
-          type = "Monoalphabetic Substitution";
-          confidence = Math.min(95, Math.max(70, (ioc - 0.055) * 2000 + 60));
-          reason = `The Index of Coincidence (IoC = ${ioc.toFixed(4)}) is high (close to English 0.0667), showing letters are substituted consistently. However, no Caesar shift fits, which points to a general Monoalphabetic Substitution cipher.`;
-        }
-      }
-    }
-  }
+  if (type === "Rail Fence") reason += ` The letter frequencies match standard English well (Chi² = ${chi2.toFixed(2)}), suggesting a transposition cipher.`;
+  else if (type === "Caesar") reason += ` A simple shift cipher is likely.`;
+  else if (type === "Vigenère") reason += ` The Index of Coincidence (IoC = ${ioc.toFixed(4)}) is low, indicating polyalphabetic smoothing.`;
+  else if (type === "Monoalphabetic Substitution") reason += ` High IoC (${ioc.toFixed(4)}) indicates monoalphabetic substitution, but it's not a simple shift.`;
+  else if (type === "Plain English") reason += ` This looks like unencrypted English text!`;
+  else if (type === "Playfair") reason += ` Characteristics point towards a Playfair digram cipher.`;
   
   return {
     type,
-    confidence: Math.round(confidence),
+    confidence,
     reason,
+    probabilities,
     metrics: {
       ioc,
       entropy,

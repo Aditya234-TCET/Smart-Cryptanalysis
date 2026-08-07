@@ -102,6 +102,7 @@ const DOM = {
   btnRunClassifier: document.getElementById('btn-run-classifier'),
   
   // Classifier outputs
+  probabilitiesList: document.getElementById('probabilities-list'),
   classifierBar: document.getElementById('classifier-bar'),
   classifierPct: document.getElementById('classifier-pct'),
   predictedCipher: document.getElementById('predicted-cipher'),
@@ -124,7 +125,9 @@ const DOM = {
   chartVigenereContainer: document.getElementById('chart-vigenere-container'),
   chartFitnessContainer: document.getElementById('chart-fitness-container'),
   interactiveManualSub: document.getElementById('interactive-manual-sub'),
-  manualFreqGrid: document.getElementById('manual-freq-grid-element')
+  manualFreqGrid: document.getElementById('manual-freq-grid-element'),
+  themeToggleBtn: document.getElementById('theme-toggle'),
+  themeIcon: document.getElementById('theme-icon')
 };
 
 // ----------------------------------------------------
@@ -145,6 +148,19 @@ function setupEventListeners() {
   // Tab Switching
   DOM.tabSandboxBtn.addEventListener('click', () => switchTab('sandbox'));
   DOM.tabAnalysisBtn.addEventListener('click', () => switchTab('analysis'));
+  
+  // Theme Toggle
+  if (DOM.themeToggleBtn) {
+    DOM.themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      if (isLight) {
+        DOM.themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+      } else {
+        DOM.themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>';
+      }
+    });
+  }
   
   // Sandbox Mode Toggles
   DOM.modeEncrypt.addEventListener('click', () => {
@@ -407,6 +423,9 @@ function runSandboxProcess() {
   }
   
   DOM.sandboxOutput.textContent = result;
+  DOM.sandboxOutput.classList.remove('output-flash');
+  void DOM.sandboxOutput.offsetWidth; // trigger reflow
+  DOM.sandboxOutput.classList.add('output-flash');
   
   // Update the visual frequency charts comparing English, cipher, and decrypted
   updateFrequencyCharts();
@@ -459,7 +478,7 @@ function rotateCaesarWheel(shift) {
   const outer = DOM.caesarWheelOuter;
   const inner = DOM.caesarWheelInner;
   
-  if (outer.children.length === 0) {
+  if (inner.children.length === 0) {
     // Generate outer letters once
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     for (let i = 0; i < 26; i++) {
@@ -682,6 +701,39 @@ function runClassifierProcess() {
     DOM.classifierBar.style.stroke = 'var(--accent)'; // orange
   }
   
+  // Render probability breakdown
+  if (DOM.probabilitiesList) {
+    DOM.probabilitiesList.innerHTML = ''; // Clear old
+    
+    // Convert to array and sort highest to lowest
+    const sortedProbs = Object.keys(classification.probabilities)
+      .map(key => ({ name: key, pct: classification.probabilities[key] }))
+      .sort((a, b) => b.pct - a.pct);
+      
+    sortedProbs.forEach(item => {
+      const probHTML = `
+        <div class="prob-item">
+          <div class="prob-label-row">
+            <span>${item.name}</span>
+            <span>${item.pct}%</span>
+          </div>
+          <div class="prob-bar-bg">
+            <div class="prob-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      `;
+      DOM.probabilitiesList.insertAdjacentHTML('beforeend', probHTML);
+    });
+    
+    // Animate width after brief delay
+    setTimeout(() => {
+      const fills = DOM.probabilitiesList.querySelectorAll('.prob-bar-fill');
+      fills.forEach((fill, index) => {
+        fill.style.width = sortedProbs[index].pct + '%';
+      });
+    }, 50);
+  }
+  
   // Proactively select the matching solver in the solver select panel
   if (classification.type === "Caesar") {
     DOM.solverSelect.value = "caesar";
@@ -728,6 +780,9 @@ function runDecoderProcess() {
       
       // Update output
       DOM.solverOutput.textContent = results[0].plaintext;
+      DOM.solverOutput.classList.remove('output-flash');
+      void DOM.solverOutput.offsetWidth;
+      DOM.solverOutput.classList.add('output-flash');
       setSolverStatus('success', 'Solved');
       
       // Render chart
@@ -748,6 +803,9 @@ function runDecoderProcess() {
       
       // Update output
       DOM.solverOutput.textContent = plaintext;
+      DOM.solverOutput.classList.remove('output-flash');
+      void DOM.solverOutput.offsetWidth;
+      DOM.solverOutput.classList.add('output-flash');
       setSolverStatus('success', 'Solved');
       
       // Render chart
@@ -771,6 +829,9 @@ function runDecoderProcess() {
       
       // Update output
       DOM.solverOutput.textContent = results[0].plaintext;
+      DOM.solverOutput.classList.remove('output-flash');
+      void DOM.solverOutput.offsetWidth;
+      DOM.solverOutput.classList.add('output-flash');
       setSolverStatus('success', 'Solved');
     }, 100);
   }
@@ -824,6 +885,9 @@ function runDecoderProcess() {
         logToConsole(`Simulated Annealing completed! Iterations: ${iteration}`, 'success');
         logToConsole(`Final plaintext fitness score: ${fitness.toFixed(4)}`, 'success');
         DOM.solverOutput.textContent = plaintext;
+        DOM.solverOutput.classList.remove('output-flash');
+        void DOM.solverOutput.offsetWidth;
+        DOM.solverOutput.classList.add('output-flash');
         
         setSolverStatus('success', 'Completed');
         DOM.btnRunSolver.style.display = 'inline-flex';
