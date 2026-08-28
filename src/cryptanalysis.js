@@ -154,14 +154,29 @@ export function classifyCipher(text) {
 
   let confidence = probabilities[type] || 0;
 
-  let reason = `Based on ML statistical analysis, ${type} is the most probable cipher (${confidence}%).`;
-  
-  if (type === "Rail Fence") reason += ` The letter frequencies match standard English well (Chi² = ${chi2.toFixed(2)}), suggesting a transposition cipher.`;
-  else if (type === "Caesar") reason += ` A simple shift cipher is likely.`;
-  else if (type === "Vigenère") reason += ` The Index of Coincidence (IoC = ${ioc.toFixed(4)}) is low, indicating polyalphabetic smoothing.`;
-  else if (type === "Monoalphabetic Substitution") reason += ` High IoC (${ioc.toFixed(4)}) indicates monoalphabetic substitution, but it's not a simple shift.`;
-  else if (type === "Plain English") reason += ` This looks like unencrypted English text!`;
-  else if (type === "Playfair") reason += ` Characteristics point towards a Playfair digram cipher.`;
+  let reason = `
+    <strong>Prediction Basis:</strong><br/>
+    The tool uses a <strong>Random Forest Machine Learning model</strong> (an ensemble of 10 Decision Trees) to analyze statistical features of the text. 
+    The final confidence of <strong>${confidence}%</strong> is calculated by aggregating the probability outputs of all decision trees in the ensemble.<br/><br/>
+    
+    <strong>Feature Analysis:</strong><br/>
+    <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem; padding-left: 1.5rem;">
+      <li><strong>Index of Coincidence (IoC = ${ioc.toFixed(4)}):</strong> Measures text randomness. English text is typically ~0.0667, while random text is ~0.0385.</li>
+      <li><strong>Shannon Entropy (${entropy.toFixed(4)}):</strong> Evaluates information density. Lower entropy means less randomness.</li>
+      <li><strong>Chi-Squared (Chi² = ${chi2.toFixed(2)}):</strong> Compares letter frequencies to standard English. Lower values indicate a closer match to plain English frequencies.</li>
+      <li><strong>Dictionary Match (${(dict_match * 100).toFixed(1)}%):</strong> The proportion of valid English words found.</li>
+      <li><strong>Vowel Ratio (${(vowel_ratio * 100).toFixed(1)}%):</strong> Proportion of vowels. Normal English is ~38-40%.</li>
+    </ul>
+    
+    <strong>Why ${type}?</strong><br/>
+  `;
+
+  if (type === "Rail Fence") reason += `The model predicted Rail Fence because the letter frequencies heavily match standard English (Chi² = ${chi2.toFixed(2)}, IoC = ${ioc.toFixed(4)}), indicating that the letters were merely rearranged (transposition), not substituted.`;
+  else if (type === "Caesar") reason += `The model detected a shifted alphabet. The text retains typical English variance but the frequencies are offset. This distinct pattern triggers the Caesar classification.`;
+  else if (type === "Vigenère") reason += `The IoC is significantly lower than English (IoC = ${ioc.toFixed(4)}) and Entropy is higher (${entropy.toFixed(4)}), suggesting multiple alphabets are smoothing out the frequency distribution (Polyalphabetic cipher).`;
+  else if (type === "Monoalphabetic Substitution") reason += `The IoC is high (${ioc.toFixed(4)}), meaning one-to-one character mapping is used, but the Chi² value (${chi2.toFixed(2)}) is extremely high since standard 'E' is no longer 'E'.`;
+  else if (type === "Plain English") reason += `All statistical indicators (IoC, Chi², Vowel Ratio, and Dictionary Match) align perfectly with standard unencrypted English text.`;
+  else if (type === "Playfair") reason += `Characteristics point towards a digram substitution cipher like Playfair. Features such as specific unique character ratios and moderate IoC led the decision trees to this outcome.`;
   
   return {
     type,

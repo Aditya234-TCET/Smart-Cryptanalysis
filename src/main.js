@@ -678,7 +678,7 @@ function runClassifierProcess() {
   
   // Update text values
   DOM.predictedCipher.textContent = classification.type;
-  DOM.classifierExplanation.textContent = classification.reason;
+  DOM.classifierExplanation.innerHTML = classification.reason;
   
   DOM.statIoC.textContent = classification.metrics.ioc.toFixed(4);
   DOM.statEntropy.textContent = classification.metrics.entropy.toFixed(4);
