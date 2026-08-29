@@ -170,6 +170,15 @@ export function classifyCipher(text) {
       <li>Decision Tree &mdash; ${dtConf}%</li>
     </ul>
     <br/>
+
+    <strong>Model Performance Metrics:</strong><br/>
+    <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem; padding-left: 1.5rem;">
+      <li>Overall Accuracy: 62.90%</li>
+      <li>Macro-averaged Precision: 64.12%</li>
+      <li>Macro-averaged Recall: 62.58%</li>
+      <li>Macro-averaged F1-score: 62.72%</li>
+    </ul>
+    <br/>
     
     <strong>Feature Analysis:</strong><br/>
     <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem; padding-left: 1.5rem;">
